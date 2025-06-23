@@ -145,11 +145,9 @@ const StatusDashboard: React.FC<Props> = () => {
 
     if (loading) {
         return (
-            <div className="status-dashboard">
-                <div className="dashboard-loading">
-                    <div className="loading-spinner"></div>
-                    <p>Cargando datos del dashboard...</p> 
-                </div>
+            <div className="stats-loading">
+                <div className="loading-spinner"></div>
+                <p>Cargando datos...</p>
             </div>
         );
     }

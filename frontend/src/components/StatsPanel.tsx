@@ -72,7 +72,7 @@ const StatsPanel: React.FC<Props> = ({ }) => {
         return (
             <div className="stats-loading">
                 <div className="loading-spinner"></div>
-                <p>Cargando estadísticas...</p>
+                <p>Cargando datos...</p>
             </div>
         );
     }
