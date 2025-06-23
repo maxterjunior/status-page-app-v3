@@ -3,7 +3,7 @@ import { StatusPageService } from '../../bindings/changeme';
 import { StatusCheck, SiteDetail } from '../types';
 import './StatusDashboard.css';
 
-interface Props {}
+interface Props { }
 
 const StatusDashboard: React.FC<Props> = () => {
     const [selectedSite, setSelectedSite] = useState<string | null>(null);
@@ -140,14 +140,15 @@ const StatusDashboard: React.FC<Props> = () => {
         if (siteChecks.length === 0) return 0;
 
         const upChecks = siteChecks.filter(check => check.status === 'up').length;
-        return Math.round((upChecks / siteChecks.length) * 100);    };
+        return Math.round((upChecks / siteChecks.length) * 100);
+    };
 
     if (loading) {
         return (
             <div className="status-dashboard">
                 <div className="dashboard-loading">
                     <div className="loading-spinner"></div>
-                    <p>Cargando datos del dashboard...</p>
+                    <p>Cargando datos del dashboard...</p> 
                 </div>
             </div>
         );
@@ -159,12 +160,11 @@ const StatusDashboard: React.FC<Props> = () => {
                 <div className="overall-status" style={{ borderColor: getStatusColor(overallStatus) }}>
                     <span className="status-icon">{getStatusIcon(overallStatus)}</span>
                     <div className="status-info">
-                        <h3>Estado General del Sistema</h3>
-                        <p className={`status-text ${overallStatus}`}>
+                        <h3 className={`status-text ${overallStatus}`}>
                             {overallStatus === 'up' ? 'Todos los sistemas operativos' :
                                 overallStatus === 'down' ? 'Algunos sistemas experimentan problemas' :
                                     'Verificando estado de los sistemas'}
-                        </p>
+                        </h3>
                     </div>
                 </div>
 
@@ -176,7 +176,7 @@ const StatusDashboard: React.FC<Props> = () => {
             <div className="sites-status-list">
                 {sites.map((site) => {
                     const uptimeData = generateUptimeData(site.name);
-                    const uptimePercent = calculateUptime(site.name);
+                    // const uptimePercent = calculateUptime(site.name);
 
                     return (
                         <div key={site.name} className={`site-status-item ${site.status}`}>
@@ -188,20 +188,18 @@ const StatusDashboard: React.FC<Props> = () => {
                                             style={{ backgroundColor: getStatusColor(site.status) }}
                                         ></span>
                                         <div className="site-info">
-                                            <h4 className="site-name">{site.name}</h4>
-                                            <p className="site-description">{site.url}</p>
+                                            <h4 className="site-name">{site.name}</h4> | <div className="site-description">{site.url}</div>
                                         </div>
                                     </div>
 
                                     <div className="site-status-badge">
                                         <span className={`status-badge ${site.status}`}>
-                                            {site.status === 'up' ? 'Operativo' :
-                                                site.status === 'down' ? 'Caído' : 'Desconocido'}
+                                            {site.status === 'up' ? 'Operativo' : site.status === 'down' ? 'Caído' : 'Desconocido'}
                                         </span>
                                     </div>
                                 </div>
 
-                                <div className="site-metrics-row">
+                                {/* <div className="site-metrics-row">
                                     <div className="metric-item">
                                         <span className="metric-label">Uptime</span>
                                         <span className="metric-value">{uptimePercent}%</span>
@@ -214,27 +212,11 @@ const StatusDashboard: React.FC<Props> = () => {
                                         <span className="metric-label">Último check</span>
                                         <span className="metric-value">{formatTime(site.lastChecked)}</span>
                                     </div>
-                                </div>
-                            </div>              <div className="uptime-timeline">
-                                <div className="timeline-header">
-                                    <span className="timeline-label">
-                                        Últimos {uptimeData.length} checks ({timelineDays} días max)
-                                    </span>
-                                    <div className="timeline-legend">
-                                        <span className="legend-item">
-                                            <span className="legend-color up"></span>
-                                            Operativo
-                                        </span>
-                                        <span className="legend-item">
-                                            <span className="legend-color down"></span>
-                                            Caído
-                                        </span>
-                                        <span className="legend-item">
-                                            <span className="legend-color unknown"></span>
-                                            Sin datos
-                                        </span>
-                                    </div>
-                                </div>
+                                </div> */}
+
+                            </div>
+
+                            <div className="uptime-timeline">
 
                                 <div className="timeline-bars">
                                     {uptimeData.map((status, index) => (
@@ -247,17 +229,10 @@ const StatusDashboard: React.FC<Props> = () => {
                                 </div>
 
                                 <div className="timeline-labels">
-                                    <span>{uptimeData.length} checks atrás</span>
+                                    <span>Hace {config.retentionDays} días</span>
                                     <span>Ahora</span>
                                 </div>
 
-                                {config && (
-                                    <div className="timeline-info">
-                                        <small>
-                                            Intervalo: {config.checkInterval}s | Retención: {config.retentionDays} días
-                                        </small>
-                                    </div>
-                                )}
                             </div>
 
                             {site.errorMessage && (
@@ -268,14 +243,14 @@ const StatusDashboard: React.FC<Props> = () => {
                             )}
 
                             <div className="site-actions">                                <button
-                                    className="manual-check-btn"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleManualCheck(site.name);
-                                    }}
-                                >
-                                    � Verificar ahora
-                                </button>
+                                className="manual-check-btn"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleManualCheck(site.name);
+                                }}
+                            >
+                                � Verificar ahora
+                            </button>
 
                                 <button
                                     className="details-btn"

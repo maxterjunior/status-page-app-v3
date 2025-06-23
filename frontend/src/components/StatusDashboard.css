@@ -24,7 +24,6 @@
 }
 
 .status-info h3 {
-  margin: 0 0 0.5rem 0;
   font-size: 1.3rem;
   font-weight: 600;
 }
@@ -111,7 +110,12 @@
 }
 
 .site-info {
-  flex: 1;
+  /* flex: 1; */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  gap: 1rem;
 }
 
 .site-name {
@@ -122,7 +126,6 @@
 }
 
 .site-description {
-  margin: 0.25rem 0 0 0;
   font-size: 0.9rem;
   opacity: 0.8;
   color: rgba(255, 255, 255, 0.8);
@@ -272,17 +275,6 @@
   justify-content: space-between;
   font-size: 0.8rem;
   opacity: 0.7;
-}
-
-.timeline-info {
-  margin-top: 0.5rem;
-  text-align: center;
-  opacity: 0.7;
-}
-
-.timeline-info small {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.8);
 }
 
 .error-message {
@@ -442,33 +434,33 @@
     align-items: stretch;
     gap: 1rem;
   }
-  
+
   .status-indicator-container {
     justify-content: flex-start;
   }
-  
+
   .site-metrics-row {
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .timeline-header {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .timeline-legend {
     justify-content: center;
   }
-  
+
   .site-actions {
     flex-direction: column;
   }
-  
+
   .details-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .overall-status {
     flex-direction: column;
     text-align: center;
