@@ -257,18 +257,20 @@
   gap: 0.5rem;
   font-size: 0.8rem;
   opacity: 0.8;
+  align-items: center;
+  justify-content: center;
 }
 
-.up-checks {
+/* .up-checks {
   color: #10b981;
 }
 
 .down-checks {
   color: #ef4444;
-}
+} */
 
 .response-time {
-  color: #667eea;
+  /* color: #667eea; */
   font-weight: 500;
   font-size: 0.9rem;
 }

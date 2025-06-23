@@ -68,15 +68,6 @@ const StatsPanel: React.FC<Props> = ({ }) => {
         return '#ef4444';
     };
 
-    if (loading) {
-        return (
-            <div className="stats-loading">
-                <div className="loading-spinner"></div>
-                <p>Cargando datos...</p>
-            </div>
-        );
-    }
-
     if (!stats) {
         return (
             <div className="stats-error">
@@ -193,10 +184,10 @@ const StatsPanel: React.FC<Props> = ({ }) => {
 
                                 <div className="col-checks">
                                     <div className="checks-breakdown">
-                                        <span className="total-checks">{siteStats.totalChecks}</span>
                                         <div className="checks-detail">
                                             <span className="up-checks">✅ {siteStats.upChecks}</span>
                                             <span className="down-checks">❌ {siteStats.downChecks}</span>
+                                            <span className="total-checks">🔁 {siteStats.totalChecks}</span>
                                         </div>
                                     </div>
                                 </div>

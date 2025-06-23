@@ -111,13 +111,8 @@ const StatusDashboard: React.FC<Props> = () => {
     const generateUptimeData = (siteName: string) => {
         if (!config) return Array(30).fill('unknown'); // fallback mientras carga config
 
-        // Calcular número de checks a mostrar basado en la configuración
-        const checksPerDay = Math.max(1, Math.floor(1440 / (config.checkInterval / 60))); // checks por día
-        const totalChecks = Math.min(90, Math.max(30, checksPerDay * timelineDays));
-
         const siteChecks = statusChecks
             .filter(check => check.siteName === siteName)
-            .slice(0, totalChecks)
             .reverse();
 
         if (siteChecks.length === 0) {
@@ -127,30 +122,11 @@ const StatusDashboard: React.FC<Props> = () => {
         // Rellenar con datos disponibles
         const uptimeData = Array(timelineDays).fill('unknown');
         siteChecks.forEach((check, index) => {
-            if (index < totalChecks) {
-                uptimeData[totalChecks - 1 - index] = check.status;
-            }
+            uptimeData[timelineDays - 1 - index] = check.status;
         });
 
         return uptimeData;
     };
-
-    const calculateUptime = (siteName: string) => {
-        const siteChecks = statusChecks.filter(check => check.siteName === siteName);
-        if (siteChecks.length === 0) return 0;
-
-        const upChecks = siteChecks.filter(check => check.status === 'up').length;
-        return Math.round((upChecks / siteChecks.length) * 100);
-    };
-
-    if (loading) {
-        return (
-            <div className="stats-loading">
-                <div className="loading-spinner"></div>
-                <p>Cargando datos...</p>
-            </div>
-        );
-    }
 
     return (
         <div className="status-dashboard">
@@ -197,21 +173,6 @@ const StatusDashboard: React.FC<Props> = () => {
                                     </div>
                                 </div>
 
-                                {/* <div className="site-metrics-row">
-                                    <div className="metric-item">
-                                        <span className="metric-label">Uptime</span>
-                                        <span className="metric-value">{uptimePercent}%</span>
-                                    </div>
-                                    <div className="metric-item">
-                                        <span className="metric-label">Respuesta</span>
-                                        <span className="metric-value">{formatResponseTime(site.responseTime)}</span>
-                                    </div>
-                                    <div className="metric-item">
-                                        <span className="metric-label">Último check</span>
-                                        <span className="metric-value">{formatTime(site.lastChecked)}</span>
-                                    </div>
-                                </div> */}
-
                             </div>
 
                             <div className="uptime-timeline">
@@ -240,15 +201,16 @@ const StatusDashboard: React.FC<Props> = () => {
                                 </div>
                             )}
 
-                            <div className="site-actions">                                <button
-                                className="manual-check-btn"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleManualCheck(site.name);
-                                }}
-                            >
-                                � Verificar ahora
-                            </button>
+                            <div className="site-actions">
+                                <button
+                                    className="manual-check-btn"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleManualCheck(site.name);
+                                    }}
+                                >
+                                    � Verificar ahora
+                                </button>
 
                                 <button
                                     className="details-btn"
