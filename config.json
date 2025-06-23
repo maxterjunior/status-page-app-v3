@@ -1,0 +1,12 @@
+{
+  "checkInterval": 30,
+  "retentionDays": 8,
+  "sites": [
+    {
+      "name": "Google",
+      "url": "https://google.com",
+      "method": "GET",
+      "timeout": 10
+    }
+  ]
+}
