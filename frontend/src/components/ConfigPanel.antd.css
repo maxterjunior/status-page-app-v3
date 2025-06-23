@@ -137,26 +137,6 @@
   background: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Modal customizations */
-.ant-modal .ant-modal-content {
-  background: rgba(30, 30, 50, 0.95) !important;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.ant-modal .ant-modal-header {
-  background: rgba(255, 255, 255, 0.05) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
-}
-
-.ant-modal .ant-modal-title {
-  color: white !important;
-}
-
-.ant-modal .ant-modal-body {
-  background: transparent !important;
-}
-
 /* Empty component customization */
 .ant-empty .ant-empty-description {
   color: rgba(255, 255, 255, 0.8) !important;
@@ -167,7 +147,7 @@
   .config-panel {
     padding: 10px;
   }
-  
+
   .config-card .ant-card-body,
   .sites-card .ant-card-body {
     padding: 1rem !important;
