@@ -1,0 +1,136 @@
+/* StatsPanel.css */
+.stats-panel {
+  color: white;
+  padding: 20px;
+}
+
+.stats-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: white;
+}
+
+.stats-error {
+  text-align: center;
+  padding: 2rem;
+  color: white;
+}
+
+.stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* Ant Design Card customizations */
+.stat-card {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+}
+
+.stat-card .ant-card-body {
+  padding: 1.5rem !important;
+}
+
+.stat-card .ant-statistic-title {
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 0.9rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.time-range-card {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+}
+
+.time-range-card .ant-card-body {
+  padding: 1.5rem !important;
+}
+
+.sites-stats-card {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+}
+
+.sites-stats-card .ant-card-body {
+  padding: 2rem !important;
+}
+
+.stats-summary-card {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+}
+
+.stats-summary-card .ant-card-body {
+  padding: 2rem !important;
+}
+
+.stats-summary-card .ant-statistic-title {
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 0.9rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* Ant Design Table customizations */
+.stats-table {
+  background: transparent !important;
+}
+
+.stats-table .ant-table {
+  background: transparent !important;
+  color: white !important;
+}
+
+.stats-table .ant-table-thead > tr > th {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.stats-table .ant-table-tbody > tr > td {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}
+
+.stats-table .ant-table-tbody > tr:hover > td {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.no-stats {
+  text-align: center;
+  padding: 2rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stats-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .stats-panel {
+    padding: 10px;
+  }
+}

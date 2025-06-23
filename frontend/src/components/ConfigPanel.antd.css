@@ -1,0 +1,175 @@
+/* ConfigPanel.antd.css */
+.config-panel {
+  color: white;
+  padding: 20px;
+}
+
+.config-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: white;
+}
+
+/* Ant Design Card customizations */
+.config-card {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  margin-bottom: 16px;
+}
+
+.config-card .ant-card-head {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.config-card .ant-card-body {
+  padding: 2rem !important;
+}
+
+.sites-card {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+}
+
+.sites-card .ant-card-head {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.sites-card .ant-card-body {
+  padding: 2rem !important;
+}
+
+/* Form customizations */
+.config-panel .ant-form-item-label > label {
+  color: white !important;
+}
+
+.config-panel .ant-input {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: white !important;
+}
+
+.config-panel .ant-input:focus,
+.config-panel .ant-input-focused {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: #1890ff !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+}
+
+.config-panel .ant-input::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.config-panel .ant-input-number {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: white !important;
+  width: 100%;
+}
+
+.config-panel .ant-input-number:focus,
+.config-panel .ant-input-number-focused {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: #1890ff !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+}
+
+.config-panel .ant-input-number .ant-input-number-input {
+  background: transparent !important;
+  color: white !important;
+}
+
+.config-panel .ant-select {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.config-panel .ant-select .ant-select-selector {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: white !important;
+}
+
+.config-panel .ant-select.ant-select-focused .ant-select-selector {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: #1890ff !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+}
+
+.config-panel .ant-select .ant-select-selection-item {
+  color: white !important;
+}
+
+/* Table customizations */
+.sites-table {
+  background: transparent !important;
+}
+
+.sites-table .ant-table {
+  background: transparent !important;
+  color: white !important;
+}
+
+.sites-table .ant-table-thead > tr > th {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.sites-table .ant-table-tbody > tr > td {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}
+
+.sites-table .ant-table-tbody > tr:hover > td {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Modal customizations */
+.ant-modal .ant-modal-content {
+  background: rgba(30, 30, 50, 0.95) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ant-modal .ant-modal-header {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.ant-modal .ant-modal-title {
+  color: white !important;
+}
+
+.ant-modal .ant-modal-body {
+  background: transparent !important;
+}
+
+/* Empty component customization */
+.ant-empty .ant-empty-description {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .config-panel {
+    padding: 10px;
+  }
+  
+  .config-card .ant-card-body,
+  .sites-card .ant-card-body {
+    padding: 1rem !important;
+  }
+}

@@ -1,6 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { StatusPageService } from '../../bindings/changeme';
-import './ConfigPanel.css';
+import {
+  Card,
+  Form,
+  Input,
+  InputNumber,
+  Button,
+  Typography,
+  Row,
+  Col,
+  Table,
+  Space,
+  Modal,
+  Select,
+  message,
+  Spin,
+  Empty,
+  Popconfirm,
+  Tag
+} from 'antd';
+import {
+  PlusOutlined,
+  DeleteOutlined,
+  SaveOutlined,
+  SettingOutlined,
+  GlobalOutlined
+} from '@ant-design/icons';
+import './ConfigPanel.antd.css';
+
+const { Title, Text } = Typography;
+const { Option } = Select;
 
 interface Config {
   checkInterval: number;
@@ -26,12 +55,8 @@ const ConfigPanel: React.FC<Props> = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showAddSite, setShowAddSite] = useState(false);
-  const [newSite, setNewSite] = useState<Site>({
-    name: '',
-    url: '',
-    method: 'GET',
-    timeout: 10
-  });
+  const [form] = Form.useForm();
+  const [configForm] = Form.useForm();
 
   useEffect(() => {
     loadConfig();
@@ -47,33 +72,34 @@ const ConfigPanel: React.FC<Props> = () => {
     } finally {
       setLoading(false);
     }
-  };
-  const handleUpdateConfig = async () => {
+  }; const handleUpdateConfig = async (values: any) => {
     try {
       setSaving(true);
-      await StatusPageService.UpdateConfig(config.checkInterval, config.retentionDays);
-      alert('Configuración actualizada correctamente');
+      await StatusPageService.UpdateConfig(values.checkInterval, values.retentionDays);
+      setConfig(prev => ({
+        ...prev,
+        checkInterval: values.checkInterval,
+        retentionDays: values.retentionDays
+      }));
+      message.success('Configuración actualizada correctamente');
     } catch (error) {
       console.error('Error updating config:', error);
-      alert('Error al actualizar la configuración');
+      message.error('Error al actualizar la configuración');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleAddSite = async () => {
-    if (!newSite.name || !newSite.url) {
-      alert('Por favor, completa el nombre y URL del sitio');
-      return;
-    } try {
-      await StatusPageService.AddSite(newSite.name, newSite.url, newSite.method, newSite.timeout);
-      setNewSite({ name: '', url: '', method: 'GET', timeout: 10 });
+  const handleAddSite = async (values: Site) => {
+    try {
+      await StatusPageService.AddSite(values.name, values.url, values.method, values.timeout);
+      form.resetFields();
       setShowAddSite(false);
       loadConfig();
-      alert('Sitio agregado correctamente');
+      message.success('Sitio agregado correctamente');
     } catch (error) {
       console.error('Error adding site:', error);
-      alert('Error al agregar el sitio');
+      message.error('Error al agregar el sitio');
     }
   };
 
@@ -89,159 +115,271 @@ const ConfigPanel: React.FC<Props> = () => {
       alert('Error al eliminar el sitio');
     }
   };
-
   if (loading) {
     return (
       <div className="config-loading">
-        <div className="loading-spinner"></div>
-        <p>Cargando configuración...</p>
+        <Spin size="large" />
+        <Text style={{ marginTop: 16, color: 'white' }}>Cargando configuración...</Text>
       </div>
     );
   }
 
+  const columns = [
+    {
+      title: 'Sitio',
+      key: 'site',
+      render: (_, record: Site) => (
+        <div>
+          <Text strong style={{ color: 'white' }}>{record.name}</Text>
+          <br />
+          <Text style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }}>
+            {record.url}
+          </Text>
+        </div>
+      )
+    },
+    {
+      title: 'Método',
+      dataIndex: 'method',
+      key: 'method',
+      render: (method: string) => (
+        <Tag color="blue">{method}</Tag>
+      )
+    },
+    {
+      title: 'Timeout',
+      dataIndex: 'timeout',
+      key: 'timeout',
+      render: (timeout: number) => (
+        <Text style={{ color: 'white' }}>{timeout}s</Text>
+      )
+    },
+    {
+      title: 'Acciones',
+      key: 'actions',
+      render: (_, record: Site) => (
+        <Popconfirm
+          title="¿Estás seguro de eliminar este sitio?"
+          description="Se eliminarán todos los datos históricos del sitio."
+          onConfirm={() => handleRemoveSite(record.name)}
+          okText="Sí"
+          cancelText="No"
+        >
+          <Button type='primary' danger icon={<DeleteOutlined />} size="small">
+            Eliminar
+          </Button>
+        </Popconfirm>
+      )
+    }
+  ];
+
   return (
     <div className="config-panel">
-      <div className="config-section">
-        <h2>Configuración General</h2>
-        <div className="config-form">
-          <div className="form-group">
-            <label htmlFor="checkInterval">Intervalo de verificación (segundos):</label>
-            <input
-              type="number"
-              id="checkInterval"
-              min="10"
-              value={config.checkInterval}
-              onChange={(e) => setConfig({ ...config, checkInterval: parseInt(e.target.value) || 30 })}
-            />
-            <small>Tiempo entre verificaciones automáticas (mínimo 10 segundos)</small>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="retentionDays">Días de retención de datos:</label>
-            <input
-              type="number"
-              id="retentionDays"
-              min="1"
-              value={config.retentionDays}
-              onChange={(e) => setConfig({ ...config, retentionDays: parseInt(e.target.value) || 7 })}
-            />
-            <small>Cuántos días mantener el historial de verificaciones</small>
-          </div>
-
-          <button
-            className="save-config-btn"
-            onClick={handleUpdateConfig}
-            disabled={saving}
+      <Row gutter={[16, 16]}>
+        <Col span={24}>
+          <Card
+            title={
+              <Title level={3} style={{ color: 'white', margin: 0 }}>
+                <SettingOutlined /> Configuración General
+              </Title>
+            }
+            className="config-card"
           >
-            {saving ? 'Guardando...' : 'Guardar Configuración'}
-          </button>
-        </div>
-      </div>
-
-      <div className="config-section">
-        <div className="section-header">
-          <h2>Sitios Monitoreados</h2>
-          <button
-            className="add-site-btn"
-            onClick={() => setShowAddSite(true)}
-          >
-            ➕ Agregar Sitio
-          </button>
-        </div>
-
-        {showAddSite && (
-          <div className="add-site-form">
-            <h3>Nuevo Sitio</h3>
-            <div className="form-grid">
-              <div className="form-group">
-                <label htmlFor="siteName">Nombre:</label>
-                <input
-                  type="text"
-                  id="siteName"
-                  placeholder="Ej: Mi Sitio Web"
-                  value={newSite.name}
-                  onChange={(e) => setNewSite({ ...newSite, name: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="siteUrl">URL:</label>
-                <input
-                  type="url"
-                  id="siteUrl"
-                  placeholder="https://ejemplo.com"
-                  value={newSite.url}
-                  onChange={(e) => setNewSite({ ...newSite, url: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="siteMethod">Método HTTP:</label>
-                <select
-                  id="siteMethod"
-                  value={newSite.method}
-                  onChange={(e) => setNewSite({ ...newSite, method: e.target.value })}
+            <Form
+              form={configForm}
+              layout="vertical"
+              initialValues={{
+                checkInterval: config.checkInterval,
+                retentionDays: config.retentionDays
+              }}
+              onFinish={handleUpdateConfig}
+            >
+              <Row gutter={16}>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label={<Text style={{ color: 'white' }}>Intervalo de verificación (segundos)</Text>}
+                    name="checkInterval"
+                    rules={[
+                      { required: true, message: 'El intervalo es requerido' },
+                      { type: 'number', min: 10, message: 'Mínimo 10 segundos' }
+                    ]}
+                  >
+                    <InputNumber
+                      min={10}
+                      placeholder="30"
+                      style={{ width: '100%' }}
+                    />
+                  </Form.Item>
+                  <Text style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }}>
+                    Tiempo entre verificaciones automáticas (mínimo 10 segundos)
+                  </Text>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label={<Text style={{ color: 'white' }}>Días de retención de datos</Text>}
+                    name="retentionDays"
+                    rules={[
+                      { required: true, message: 'Los días de retención son requeridos' },
+                      { type: 'number', min: 1, message: 'Mínimo 1 día' }
+                    ]}
+                  >
+                    <InputNumber
+                      min={1}
+                      placeholder="7"
+                      style={{ width: '100%' }}
+                    />
+                  </Form.Item>
+                  <Text style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }}>
+                    Cuántos días mantener el historial de verificaciones
+                  </Text>
+                </Col>
+              </Row>
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={saving}
+                  icon={<SaveOutlined />}
                 >
-                  <option value="GET">GET</option>
-                  <option value="POST">POST</option>
-                  <option value="HEAD">HEAD</option>
-                </select>
-              </div>
+                  Guardar Configuración
+                </Button>
+              </Form.Item>
+            </Form>
+          </Card>
+        </Col>
 
-              <div className="form-group">
-                <label htmlFor="siteTimeout">Timeout (segundos):</label>
-                <input
-                  type="number"
-                  id="siteTimeout"
-                  min="1"
-                  max="300"
-                  value={newSite.timeout}
-                  onChange={(e) => setNewSite({ ...newSite, timeout: parseInt(e.target.value) || 10 })}
-                />
+        <Col span={24}>
+          <Card
+            title={
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Title level={3} style={{ color: 'white', margin: 0 }}>
+                  <GlobalOutlined /> Sitios Monitoreados
+                </Title>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setShowAddSite(true)}
+                >
+                  Agregar Sitio
+                </Button>
               </div>
-            </div>
+            }
+            className="sites-card"
+          >
+            {config.sites.length === 0 ? (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={
+                  <div>
+                    <Text style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                      No hay sitios configurados
+                    </Text>
+                    <br />
+                    <Text style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                      Agrega un sitio para comenzar el monitoreo
+                    </Text>
+                  </div>
+                }
+              />
+            ) : (
+              <Table
+                dataSource={config.sites}
+                columns={columns}
+                rowKey="name"
+                pagination={false}
+                className="sites-table"
+              />
+            )}
+          </Card>
+        </Col>
+      </Row>
 
-            <div className="form-actions">
-              <button className="cancel-btn" onClick={() => setShowAddSite(false)}>
-                Cancelar
-              </button>
-              <button className="add-btn" onClick={handleAddSite}>
-                Agregar Sitio
-              </button>
-            </div>
-          </div>
-        )}
-
-        <div className="sites-list">
-          {config.sites.map((site, index) => (
-            <div key={index} className="site-item">
-              <div className="site-info">
-                <h4>{site.name}</h4>
-                <p className="site-url">{site.url}</p>
-                <div className="site-details">
-                  <span className="method-badge">{site.method}</span>
-                  <span className="timeout-info">Timeout: {site.timeout}s</span>
-                </div>
-              </div>
-              <button
-                className="remove-site-btn"
-                onClick={() => handleRemoveSite(site.name)}
-                title="Eliminar sitio"
+      <Modal
+        title="Agregar Nuevo Sitio"
+        open={showAddSite}
+        onCancel={() => {
+          setShowAddSite(false);
+          form.resetFields();
+        }}
+        footer={null}
+        width={600}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleAddSite}
+          initialValues={{
+            method: 'GET',
+            timeout: 10
+          }}
+        >
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Nombre del sitio"
+                name="name"
+                rules={[{ required: true, message: 'El nombre es requerido' }]}
               >
-                🗑️
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {config.sites.length === 0 && (
-          <div className="empty-sites">
-            <div className="empty-icon">🌐</div>
-            <p>No hay sitios configurados</p>
-            <p>Agrega un sitio para comenzar el monitoreo</p>
-          </div>
-        )}
-      </div>
+                <Input placeholder="Ej: Mi Sitio Web" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="URL"
+                name="url"
+                rules={[
+                  { required: true, message: 'La URL es requerida' },
+                  { type: 'url', message: 'Ingresa una URL válida' }
+                ]}
+              >
+                <Input placeholder="https://ejemplo.com" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Método HTTP"
+                name="method"
+                rules={[{ required: true, message: 'El método es requerido' }]}
+              >
+                <Select>
+                  <Option value="GET">GET</Option>
+                  <Option value="POST">POST</Option>
+                  <Option value="HEAD">HEAD</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Timeout (segundos)"
+                name="timeout"
+                rules={[
+                  { required: true, message: 'El timeout es requerido' },
+                  { type: 'number', min: 1, max: 300, message: 'Entre 1 y 300 segundos' }
+                ]}
+              >
+                <InputNumber min={1} max={300} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+            <Space>
+              <Button
+                onClick={() => {
+                  setShowAddSite(false);
+                  form.resetFields();
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button type="primary" htmlType="submit" icon={<PlusOutlined />}>
+                Agregar Sitio
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
