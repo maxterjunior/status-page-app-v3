@@ -1,45 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { StatusPageService } from '../../bindings/changeme';
+import { StatusCheck, SiteDetail } from '../types';
 import './StatusDashboard.css';
 
-interface StatusCheck {
-    id: number;
-    siteName: string;
-    siteUrl: string;
-    status: string;
-    statusCode: number;
-    responseTime: number;
-    checkedAt: string;
-    errorMessage?: string;
-}
+interface Props {}
 
-interface SiteDetail {
-    name: string;
-    url: string;
-    method: string;
-    timeout: number;
-    status?: string;
-    statusCode?: number;
-    responseTime?: number;
-    lastChecked?: string;
-    errorMessage?: string;
-    isActive: boolean;
-}
-
-interface Props {
-    sites: SiteDetail[];
-    statusChecks: StatusCheck[];
-    onManualCheck: (siteName: string) => void;
-    onRefresh: () => void;
-}
-
-const StatusDashboard: React.FC<Props> = ({ sites, statusChecks, onManualCheck, onRefresh }) => {
+const StatusDashboard: React.FC<Props> = () => {
     const [selectedSite, setSelectedSite] = useState<string | null>(null);
     const [config, setConfig] = useState<any>(null);
     const [timelineDays, setTimelineDays] = useState(7);
+    const [sites, setSites] = useState<SiteDetail[]>([]);
+    const [statusChecks, setStatusChecks] = useState<StatusCheck[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            const [sitesData, statusData] = await Promise.all([
+                StatusPageService.GetAllSites(),
+                StatusPageService.GetAllStatus()
+            ]);
+            setSites(sitesData);
+            setStatusChecks(statusData);
+        } catch (error) {
+            console.error('Error loading data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleManualCheck = async (siteName: string) => {
+        try {
+            await StatusPageService.ManualCheck(siteName);
+            // Esperar un poco y recargar datos
+            setTimeout(loadData, 2000);
+        } catch (error) {
+            console.error('Error en check manual:', error);
+        }
+    };
 
     useEffect(() => {
         loadConfig();
+        loadData();
+
+        // Actualizar datos cada 30 segundos
+        const interval = setInterval(loadData, 30000);
+        return () => clearInterval(interval);
     }, []);
 
     const loadConfig = async () => {
@@ -134,8 +140,18 @@ const StatusDashboard: React.FC<Props> = ({ sites, statusChecks, onManualCheck, 
         if (siteChecks.length === 0) return 0;
 
         const upChecks = siteChecks.filter(check => check.status === 'up').length;
-        return Math.round((upChecks / siteChecks.length) * 100);
-    };
+        return Math.round((upChecks / siteChecks.length) * 100);    };
+
+    if (loading) {
+        return (
+            <div className="status-dashboard">
+                <div className="dashboard-loading">
+                    <div className="loading-spinner"></div>
+                    <p>Cargando datos del dashboard...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="status-dashboard">
@@ -251,12 +267,11 @@ const StatusDashboard: React.FC<Props> = ({ sites, statusChecks, onManualCheck, 
                                 </div>
                             )}
 
-                            <div className="site-actions">
-                                <button
+                            <div className="site-actions">                                <button
                                     className="manual-check-btn"
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        onManualCheck(site.name);
+                                        handleManualCheck(site.name);
                                     }}
                                 >
                                     � Verificar ahora

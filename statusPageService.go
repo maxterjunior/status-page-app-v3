@@ -486,12 +486,46 @@ func (s *StatusPageService) AddSite(name, url, method string, timeout int) error
 }
 
 func (s *StatusPageService) RemoveSite(name string) error {
+	// Primero verificar si el sitio existe
+	siteExists := false
 	for i, site := range s.config.Sites {
 		if site.Name == name {
+			// Remover el sitio de la configuración
 			s.config.Sites = append(s.config.Sites[:i], s.config.Sites[i+1:]...)
-			return s.saveConfig()
+			siteExists = true
+			break
 		}
 	}
+
+	if !siteExists {
+		log.Printf("Sitio '%s' no encontrado en la configuración", name)
+		return nil
+	}
+
+	// Eliminar todos los registros de status_checks para este sitio
+	deleteSQL := `DELETE FROM status_checks WHERE site_name = ?`
+	result, err := s.db.Exec(deleteSQL, name)
+	if err != nil {
+		log.Printf("Error eliminando registros de estado para el sitio '%s': %v", name, err)
+		// Continuar con el guardado de la configuración aunque falle la eliminación de logs
+	} else {
+		// Obtener cuántos registros se eliminaron
+		rowsDeleted, err := result.RowsAffected()
+		if err != nil {
+			log.Printf("Error obteniendo filas afectadas al eliminar registros del sitio '%s': %v", name, err)
+		} else if rowsDeleted > 0 {
+			log.Printf("Eliminados %d registros de estado para el sitio '%s'", rowsDeleted, name)
+		}
+	}
+
+	// Guardar la configuración actualizada
+	err = s.saveConfig()
+	if err != nil {
+		log.Printf("Error guardando configuración después de eliminar sitio '%s': %v", name, err)
+		return err
+	}
+
+	log.Printf("Sitio '%s' eliminado exitosamente junto con su historial", name)
 	return nil
 }
 

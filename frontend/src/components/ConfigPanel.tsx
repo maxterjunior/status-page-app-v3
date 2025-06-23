@@ -15,11 +15,9 @@ interface Site {
   timeout: number;
 }
 
-interface Props {
-  onConfigUpdate: () => void;
-}
+interface Props { }
 
-const ConfigPanel: React.FC<Props> = ({ onConfigUpdate }) => {
+const ConfigPanel: React.FC<Props> = () => {
   const [config, setConfig] = useState<Config>({
     checkInterval: 30,
     retentionDays: 7,
@@ -50,12 +48,10 @@ const ConfigPanel: React.FC<Props> = ({ onConfigUpdate }) => {
       setLoading(false);
     }
   };
-
   const handleUpdateConfig = async () => {
     try {
       setSaving(true);
       await StatusPageService.UpdateConfig(config.checkInterval, config.retentionDays);
-      onConfigUpdate();
       alert('Configuración actualizada correctamente');
     } catch (error) {
       console.error('Error updating config:', error);
@@ -69,14 +65,11 @@ const ConfigPanel: React.FC<Props> = ({ onConfigUpdate }) => {
     if (!newSite.name || !newSite.url) {
       alert('Por favor, completa el nombre y URL del sitio');
       return;
-    }
-
-    try {
+    } try {
       await StatusPageService.AddSite(newSite.name, newSite.url, newSite.method, newSite.timeout);
       setNewSite({ name: '', url: '', method: 'GET', timeout: 10 });
       setShowAddSite(false);
       loadConfig();
-      onConfigUpdate();
       alert('Sitio agregado correctamente');
     } catch (error) {
       console.error('Error adding site:', error);
@@ -87,12 +80,9 @@ const ConfigPanel: React.FC<Props> = ({ onConfigUpdate }) => {
   const handleRemoveSite = async (siteName: string) => {
     if (!confirm(`¿Estás seguro de que quieres eliminar el sitio "${siteName}"?`)) {
       return;
-    }
-
-    try {
+    } try {
       await StatusPageService.RemoveSite(siteName);
       loadConfig();
-      onConfigUpdate();
       alert('Sitio eliminado correctamente');
     } catch (error) {
       console.error('Error removing site:', error);
@@ -138,7 +128,7 @@ const ConfigPanel: React.FC<Props> = ({ onConfigUpdate }) => {
             <small>Cuántos días mantener el historial de verificaciones</small>
           </div>
 
-          <button 
+          <button
             className="save-config-btn"
             onClick={handleUpdateConfig}
             disabled={saving}
@@ -151,7 +141,7 @@ const ConfigPanel: React.FC<Props> = ({ onConfigUpdate }) => {
       <div className="config-section">
         <div className="section-header">
           <h2>Sitios Monitoreados</h2>
-          <button 
+          <button
             className="add-site-btn"
             onClick={() => setShowAddSite(true)}
           >
@@ -233,7 +223,7 @@ const ConfigPanel: React.FC<Props> = ({ onConfigUpdate }) => {
                   <span className="timeout-info">Timeout: {site.timeout}s</span>
                 </div>
               </div>
-              <button 
+              <button
                 className="remove-site-btn"
                 onClick={() => handleRemoveSite(site.name)}
                 title="Eliminar sitio"
