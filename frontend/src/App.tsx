@@ -121,7 +121,7 @@ function App() {
                 )}
 
                 {currentView === 'stats' && (
-                    <StatsPanel onRefresh={handleRefresh} />
+                    <StatsPanel />
                 )}
 
                 {currentView === 'config' && (
