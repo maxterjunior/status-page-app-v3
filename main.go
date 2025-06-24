@@ -37,8 +37,8 @@ func main() {
 
 	window := app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
 		Title:       "StatusPage Monitor",
-		Width:       1000,
-		Height:      600,
+		Width:       1100,
+		Height:      700,
 		Frameless:   true,
 		AlwaysOnTop: true,
 		Hidden:      true,
