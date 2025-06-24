@@ -38,16 +38,16 @@ type StatusCheck struct {
 }
 
 type SiteDetail struct {
-	Name         string    `json:"name"`
-	URL          string    `json:"url"`
-	Method       string    `json:"method"`
-	Timeout      int       `json:"timeout"`
-	Status       string    `json:"status,omitempty"`
-	StatusCode   int       `json:"statusCode,omitempty"`
-	ResponseTime int64     `json:"responseTime,omitempty"`
-	LastChecked  time.Time `json:"lastChecked,omitempty"`
-	ErrorMessage string    `json:"errorMessage,omitempty"`
-	IsActive     bool      `json:"isActive"`
+	Name         string `json:"name"`
+	URL          string `json:"url"`
+	Method       string `json:"method"`
+	Timeout      int    `json:"timeout"`
+	Status       string `json:"status,omitempty"`
+	StatusCode   int    `json:"statusCode,omitempty"`
+	ResponseTime int64  `json:"responseTime,omitempty"`
+	LastChecked  string `json:"lastChecked,omitempty"`
+	ErrorMessage string `json:"errorMessage,omitempty"`
+	IsActive     bool   `json:"isActive"`
 }
 
 type SiteStats struct {
@@ -392,7 +392,7 @@ func (s *StatusPageService) GetAllSites() ([]SiteDetail, error) {
 			detail.Status = "unknown"
 		} else {
 			if checkedAtStr.Valid {
-				detail.LastChecked, _ = time.Parse("2006-01-02 15:04:05", checkedAtStr.String)
+				detail.LastChecked = checkedAtStr.String
 			}
 		}
 

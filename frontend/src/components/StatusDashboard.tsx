@@ -1,44 +1,44 @@
-import React, { useState, useEffect } from 'react';
-import { StatusPageService } from '../../bindings/changeme';
-import { StatusCheck, SiteDetail } from '../types';
-import {
-    Card,
-    Typography,
-    Button,
-    Space,
-    Tag,
-    Spin,
-    Empty,
-    Progress,
-    Tooltip,
-    Row,
-    Col,
-    Statistic,
-    Collapse,
-    Divider
-} from 'antd';
 import {
     CheckCircleOutlined,
     CloseCircleOutlined,
+    MoreOutlined,
     QuestionCircleOutlined,
-    ReloadOutlined,
-    EyeOutlined,
-    EyeInvisibleOutlined
+    ReloadOutlined
 } from '@ant-design/icons';
+import {
+    Button,
+    Card,
+    Col,
+    Divider,
+    Dropdown,
+    Empty,
+    Modal,
+    Row,
+    Space,
+    Spin,
+    Statistic,
+    Tag,
+    Tooltip,
+    Typography
+} from 'antd';
+import dayjs from 'dayjs';
+import React, { useEffect, useState } from 'react';
+import { StatusPageService } from '../../bindings/changeme';
+import { SiteDetail, StatusCheck } from '../types';
 import './StatusDashboard.css';
 
 const { Title, Text } = Typography;
-const { Panel } = Collapse;
 
 interface Props { }
 
 const StatusDashboard: React.FC<Props> = () => {
     const [selectedSite, setSelectedSite] = useState<string | null>(null);
     const [config, setConfig] = useState<any>(null);
-    const [timelineDays, setTimelineDays] = useState(7);
-    const [sites, setSites] = useState<SiteDetail[]>([]);
+    const [timelineDays, setTimelineDays] = useState(7); const [sites, setSites] = useState<SiteDetail[]>([]);
     const [statusChecks, setStatusChecks] = useState<StatusCheck[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingCards, setLoadingCards] = useState<Set<string>>(new Set());
+    const [modalOpen, setModalOpen] = useState(false);
 
     const loadData = async () => {
         try {
@@ -54,16 +54,41 @@ const StatusDashboard: React.FC<Props> = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleManualCheck = async (siteName: string) => {
+    }; const handleManualCheck = async (siteName: string) => {
         try {
+            // Agregar sitio al set de loading
+            setLoadingCards(prev => new Set(prev).add(siteName));
+
             await StatusPageService.ManualCheck(siteName);
             // Esperar un poco y recargar datos
-            setTimeout(loadData, 2000);
+            setTimeout(() => {
+                loadData();
+                // Remover sitio del set de loading
+                setLoadingCards(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(siteName);
+                    return newSet;
+                });
+            }, 2000);
         } catch (error) {
             console.error('Error en check manual:', error);
+            // Remover sitio del set de loading en caso de error
+            setLoadingCards(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(siteName);
+                return newSet;
+            });
         }
+    };
+
+    const handleShowDetails = (siteName: string) => {
+        setSelectedSite(siteName);
+        setModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setModalOpen(false);
+        setSelectedSite(null);
     };
 
     useEffect(() => {
@@ -87,19 +112,6 @@ const StatusDashboard: React.FC<Props> = () => {
         } catch (error) {
             console.error('Error loading config:', error);
             setTimelineDays(7); // valor por defecto
-        }
-    };
-
-    const getStatusIcon = (status?: string) => {
-        switch (status) {
-            case 'up':
-                return '🟢';
-            case 'down':
-                return '🔴';
-            case 'unknown':
-                return '⚫';
-            default:
-                return '⚪';
         }
     };
 
@@ -220,22 +232,22 @@ const StatusDashboard: React.FC<Props> = () => {
                             </Button>
                         </Col>
                     </Row>
-                </Card>
-
-                <Row gutter={[16, 16]}>
+                </Card>                <Row gutter={[16, 16]}>
                     {sites.map((site) => {
                         const uptimeData = generateUptimeData(site.name);
                         const uptimePercent = calculateUptime(site.name);
+                        const isCardLoading = loadingCards.has(site.name);
 
                         return (
                             <Col xs={24} lg={12} xl={8} key={site.name}>
                                 <Card
+                                    loading={isCardLoading}
                                     className="site-status-card"
                                     title={
                                         <div style={{ display: 'flex', alignItems: 'center' }}>
                                             <div
                                                 style={{
-                                                    width: 12,
+                                                    minWidth: 12,
                                                     height: 12,
                                                     borderRadius: '50%',
                                                     marginRight: 5,
@@ -269,18 +281,37 @@ const StatusDashboard: React.FC<Props> = () => {
 
                                         </div>
                                     }
-                                    extra={getStatusTag(site.status)}
-                                    size="small"
-                                >
+                                    extra={<div style={{ display: 'flex', alignItems: 'center' }}>
+                                        <Dropdown
+                                            menu={{
+                                                items: [
+                                                    {
+                                                        key: 'manualCheck',
+                                                        label: 'Verificar ahora',
+                                                        onClick: () => handleManualCheck(site.name),
+                                                        disabled: isCardLoading
+                                                    },
+                                                    {
+                                                        key: 'showDetails',
+                                                        label: 'Ver detalles',
+                                                        onClick: () => handleShowDetails(site.name)
+                                                    }
+                                                ]
+                                            }}
+                                        >
+                                            <Button type="link" icon={<MoreOutlined />} />
+                                        </Dropdown>
+                                        {getStatusTag(site.status)}
+                                    </div>}
+                                    size="small"                                >
                                     <Space direction="vertical" style={{ width: '100%' }} size="small">
-
                                         <div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                                                 <Text style={{ fontSize: '12px' }}>
                                                     Últimos {uptimeData.length} checks
                                                 </Text>
                                                 <Text style={{ fontSize: '11px' }}>
-                                                    {formatTime(site.lastChecked)}
+                                                    {dayjs(site.lastChecked).format('DD/MM/YYYY')}
                                                 </Text>
                                             </div>
                                             <div style={{ display: 'flex', gap: 1, height: 20 }}>
@@ -313,102 +344,12 @@ const StatusDashboard: React.FC<Props> = () => {
                                                 </Text>
                                             </div>
                                         )}
-
-                                        <div style={{ marginTop: 12 }}>
-                                            <Space>
-                                                <Button
-                                                    type="primary"
-                                                    size="small"
-                                                    icon={<ReloadOutlined />}
-                                                    onClick={() => handleManualCheck(site.name)}
-                                                >
-                                                    Verificar
-                                                </Button>
-                                                <Button
-                                                    size="small"
-                                                    icon={selectedSite === site.name ? <EyeInvisibleOutlined /> : <EyeOutlined />}
-                                                    onClick={() => setSelectedSite(selectedSite === site.name ? null : site.name)}
-                                                >
-                                                    {selectedSite === site.name ? 'Ocultar' : 'Detalles'}
-                                                </Button>
-                                            </Space>
-                                        </div>
                                     </Space>
                                 </Card>
-
-                                {selectedSite === site.name && (
-                                    <Card
-                                        className="site-details-card"
-                                        style={{ marginTop: 8 }}
-                                        size="small"
-                                    >
-                                        <Collapse ghost>
-                                            <Panel header="Configuración" key="config">
-                                                <Row gutter={[16, 8]}>
-                                                    <Col span={8}>
-                                                        <Text >Método:</Text>
-                                                    </Col>
-                                                    <Col span={16}>
-                                                        <Tag color="blue">{site.method}</Tag>
-                                                    </Col>
-                                                    <Col span={8}>
-                                                        <Text >Timeout:</Text>
-                                                    </Col>
-                                                    <Col span={16}>
-                                                        <Text >{site.timeout}s</Text>
-                                                    </Col>
-                                                    <Col span={8}>
-                                                        <Text >Estado HTTP:</Text>
-                                                    </Col>
-                                                    <Col span={16}>
-                                                        <Text >{site.statusCode || 'N/A'}</Text>
-                                                    </Col>
-                                                </Row>
-                                            </Panel>
-                                            <Panel header="Historial Reciente" key="history">
-                                                <div style={{ maxHeight: 200, overflowY: 'auto' }}>
-                                                    {statusChecks
-                                                        .filter(check => check.siteName === site.name)
-                                                        .slice(0, 10)
-                                                        .map((check, index) => (
-                                                            <div
-                                                                key={index}
-                                                                style={{
-                                                                    display: 'flex',
-                                                                    justifyContent: 'space-between',
-                                                                    alignItems: 'center',
-                                                                    padding: '4px 0',
-                                                                    borderBottom: index < 9 ? '1px solid rgba(255, 255, 255, 0.1)' : 'none'
-                                                                }}
-                                                            >
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                                    {getStatusTag(check.status)}
-                                                                    <Text style={{ fontSize: '12px' }}>
-                                                                        HTTP {check.statusCode}
-                                                                    </Text>
-                                                                </div>
-                                                                <div style={{ textAlign: 'right' }}>
-                                                                    <Text style={{ fontSize: '11px' }}>
-                                                                        {formatResponseTime(check.responseTime)}
-                                                                    </Text>
-                                                                    <br />
-                                                                    <Text style={{ fontSize: '10px' }}>
-                                                                        {formatTime(check.checkedAt)}
-                                                                    </Text>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                </div>
-                                            </Panel>
-                                        </Collapse>
-                                    </Card>
-                                )}
                             </Col>
                         );
                     })}
-                </Row>
-
-                {sites.length === 0 && (
+                </Row>                {sites.length === 0 && (
                     <Card>
                         <Empty
                             image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -426,6 +367,167 @@ const StatusDashboard: React.FC<Props> = () => {
                         />
                     </Card>
                 )}
+
+                {/* Modal para mostrar detalles del sitio */}
+                <Modal
+                    title={
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <div
+                                style={{
+                                    width: 16,
+                                    height: 16,
+                                    borderRadius: '50%',
+                                    marginRight: 8,
+                                    backgroundColor: selectedSite ? getStatusColor(sites.find(s => s.name === selectedSite)?.status) : '#d1d5db'
+                                }}
+                            />
+                            Detalles de {selectedSite}
+                        </div>
+                    }
+                    open={modalOpen}
+                    onCancel={handleCloseModal}
+                    footer={[
+                        <Button key="close" onClick={handleCloseModal}>
+                            Cerrar
+                        </Button>,
+                        <Button
+                            key="check"
+                            type="primary"
+                            icon={<ReloadOutlined />}
+                            loading={selectedSite ? loadingCards.has(selectedSite) : false}
+                            onClick={() => selectedSite && handleManualCheck(selectedSite)}
+                        >
+                            Verificar ahora
+                        </Button>
+                    ]}
+                    width={800}
+                >
+                    {selectedSite && (() => {
+                        const site = sites.find(s => s.name === selectedSite);
+                        if (!site) return null;
+
+                        return (
+                            <div>
+                                {/* Sección de Configuración */}
+                                <Title level={4} style={{ marginTop: 0 }}>Configuración</Title>
+                                <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                                    <Col span={12}>
+                                        <Card size="small">
+                                            <Statistic
+                                                title="URL"
+                                                value={site.url}
+                                                valueStyle={{ fontSize: '14px', wordBreak: 'break-all' }}
+                                            />
+                                        </Card>
+                                    </Col>
+                                    <Col span={6}>
+                                        <Card size="small">
+                                            <Statistic
+                                                title="Método"
+                                                value={site.method}
+                                                formatter={(value) => <Tag color="blue">{value}</Tag>}
+                                            />
+                                        </Card>
+                                    </Col>
+                                    <Col span={6}>
+                                        <Card size="small">
+                                            <Statistic
+                                                title="Timeout"
+                                                value={site.timeout}
+                                                suffix="s"
+                                            />
+                                        </Card>
+                                    </Col>
+                                    <Col span={8}>
+                                        <Card size="small">
+                                            <Statistic
+                                                title="Estado HTTP"
+                                                value={site.statusCode || 'N/A'}
+                                            />
+                                        </Card>
+                                    </Col>
+                                    <Col span={8}>
+                                        <Card size="small">
+                                            <Statistic
+                                                title="Tiempo de Respuesta"
+                                                value={site.responseTime || 0}
+                                                suffix="ms"
+                                            />
+                                        </Card>
+                                    </Col>
+                                    <Col span={8}>
+                                        <Card size="small">
+                                            <Statistic
+                                                title="Uptime"
+                                                value={calculateUptime(selectedSite)}
+                                                suffix="%"
+                                                valueStyle={{
+                                                    color: calculateUptime(selectedSite) >= 95 ? '#10b981' : '#ef4444'
+                                                }}
+                                            />
+                                        </Card>
+                                    </Col>
+                                </Row>
+
+                                {site.errorMessage && (
+                                    <div style={{
+                                        marginBottom: 24,
+                                        padding: 12,
+                                        background: 'rgba(239, 68, 68, 0.1)',
+                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                        borderRadius: 6
+                                    }}>
+                                        <Title level={5} style={{ color: '#fca5a5', margin: 0 }}>
+                                            ⚠️ Error Actual
+                                        </Title>
+                                        <Text style={{ color: '#fca5a5' }}>
+                                            {site.errorMessage}
+                                        </Text>
+                                    </div>
+                                )}
+
+                                {/* Sección de Historial */}
+                                <Title level={4}>Historial Reciente</Title>
+                                <div style={{ maxHeight: 400 }}>
+                                    <Row gutter={[8, 8]}>
+                                        {statusChecks
+                                            .filter(check => check.siteName === selectedSite)
+                                            .slice(0, 20)
+                                            .map((check, index) => (
+                                                <Col span={24} key={index}>
+                                                    <Card
+                                                        size="small"
+                                                        style={{
+                                                            borderLeft: `4px solid ${getStatusColor(check.status)}`,
+                                                        }}
+                                                    >
+                                                        <Row align="middle" justify="space-between">
+                                                            <Col>
+                                                                <Space>
+                                                                    {getStatusTag(check.status)}
+                                                                    <Text style={{ fontSize: '12px' }}>
+                                                                        HTTP {check.statusCode}
+                                                                    </Text>
+                                                                    <Text style={{ fontSize: '12px' }}>
+                                                                        {formatResponseTime(check.responseTime)}
+                                                                    </Text>
+                                                                </Space>
+                                                            </Col>
+                                                            <Col>
+                                                                <Text style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                                                                    {formatTime(check.checkedAt)}
+                                                                </Text>
+                                                            </Col>
+                                                        </Row>
+                                                    </Card>
+                                                </Col>
+                                            ))}
+                                    </Row>
+                                </div>
+                            </div>
+                        );
+                    })()}
+                </Modal>
 
             </Spin>
         </div>

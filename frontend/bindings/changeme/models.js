@@ -165,9 +165,9 @@ export class SiteDetail {
         if (/** @type {any} */(false)) {
             /**
              * @member
-             * @type {time$0.Time | undefined}
+             * @type {string | undefined}
              */
-            this["lastChecked"] = null;
+            this["lastChecked"] = "";
         }
         if (/** @type {any} */(false)) {
             /**

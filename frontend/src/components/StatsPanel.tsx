@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StatusPageService } from '../../bindings/changeme';
 import { Card, Statistic, Table, Button, Typography, Row, Col, Progress, Tag, Spin, Space } from 'antd';
-import { ReloadOutlined, DatabaseOutlined, ClockCircleOutlined, FolderOutlined, LineChartOutlined, ArrowUpOutlined } from '@ant-design/icons';
+import { ReloadOutlined, DatabaseOutlined, ClockCircleOutlined, FolderOutlined, LineChartOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 import './StatsPanel.antd.css';
 
 const { Title, Text } = Typography;
@@ -199,6 +199,7 @@ const StatsPanel: React.FC<Props> = ({ }) => {
                                 title: 'Sitio',
                                 dataIndex: 'siteName',
                                 key: 'siteName',
+                                minWidth: 200,
                                 render: (text) => (
                                     <Text strong style={{ color: 'white' }}>{text}</Text>
                                 )
@@ -207,42 +208,27 @@ const StatsPanel: React.FC<Props> = ({ }) => {
                                 title: 'Uptime',
                                 dataIndex: 'uptimePercent',
                                 key: 'uptimePercent',
-                                render: (uptime) => (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                minWidth: 150,
+                                render: (uptime) => {
+                                    const time = Math.round(uptime * 100) / 100; // Redondear a dos decimales
+                                    return (
                                         <Progress
-                                            percent={uptime}
+                                            percent={time}
                                             size="small"
-                                            strokeColor={getUptimeColor(uptime)}
-                                            style={{ width: 80 }}
-                                        />
-                                        <Text style={{ color: getUptimeColor(uptime), minWidth: 50 }}>
-                                            {formatPercentage(uptime)}
-                                        </Text>
-                                    </div>
-                                )
+                                            strokeColor={getUptimeColor(time)}
+                                        // style={{ width: 120 }}
+                                        />)
+                                }
                             }, {
                                 title: 'Verificaciones',
                                 key: 'checks',
+                                width: 150,
                                 render: (_, record: SiteStats) => (
-                                    // <div>
-                                    //     <Text strong style={{ color: 'white' }}>
-                                    //         {record.totalChecks.toLocaleString()}
-                                    //     </Text>
-                                    //     <div style={{ fontSize: '12px', opacity: 0.8 }}>
-                                    //         <Text style={{ color: '#10b981' }}>
-                                    //             ↑ {record.upChecks}
-                                    //         </Text>
-                                    //         {' '}
-                                    //         <Text style={{ color: '#ef4444' }}>
-                                    //             ↓ {record.downChecks}
-                                    //         </Text>
-                                    //     </div>
-                                    // </div>
                                     <Space>
                                         <Tag color="#10b981" icon={<ArrowUpOutlined />}>
                                             {record.upChecks.toLocaleString()}
                                         </Tag>
-                                        <Tag color="#ef4444" icon={<ArrowUpOutlined />}>
+                                        <Tag color="#ef4444" icon={<ArrowDownOutlined />}>
                                             {record.downChecks.toLocaleString()}
                                         </Tag>
                                         <Tag color="#6366f1" icon={<DatabaseOutlined />}>
@@ -268,13 +254,13 @@ const StatsPanel: React.FC<Props> = ({ }) => {
                                     let status, color;
                                     if (uptime >= 99) {
                                         status = 'Excelente';
-                                        color = 'success';
+                                        color = '#10b981';
                                     } else if (uptime >= 95) {
                                         status = 'Bueno';
-                                        color = 'warning';
+                                        color = '#ffbb33';
                                     } else {
                                         status = 'Deficiente';
-                                        color = 'error';
+                                        color = '#ff4d4f';
                                     }
                                     return <Tag color={color}>{status}</Tag>;
                                 }
