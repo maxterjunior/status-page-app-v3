@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -218,7 +219,33 @@ func (s *StatusPageService) startMonitoring() {
 	}
 }
 
+func (s *StatusPageService) hasInternetConnection() bool {
+	// Intentar conectar a múltiples servidores DNS públicos
+	testHosts := []string{
+		"8.8.8.8:53",        // Google DNS
+		"1.1.1.1:53",        // Cloudflare DNS
+		"208.67.222.222:53", // OpenDNS
+	}
+
+	for _, host := range testHosts {
+		conn, err := net.DialTimeout("tcp", host, 5*time.Second)
+		if err == nil {
+			conn.Close()
+			return true
+		}
+	}
+
+	log.Println("No se detectó conexión a internet")
+	return false
+}
+
 func (s *StatusPageService) checkAllSites() {
+	// Verificar conectividad a internet antes de hacer checks
+	if !s.hasInternetConnection() {
+		log.Println("Sin conexión a internet, omitiendo verificación de sitios")
+		return
+	}
+
 	for _, site := range s.config.Sites {
 		go s.checkSite(site)
 	}
@@ -536,6 +563,12 @@ func (s *StatusPageService) UpdateConfig(checkInterval, retentionDays int) error
 }
 
 func (s *StatusPageService) ManualCheck(siteName string) error {
+	// Verificar conectividad a internet antes de hacer check manual
+	if !s.hasInternetConnection() {
+		log.Println("Sin conexión a internet, no se puede realizar verificación manual")
+		return nil
+	}
+
 	for _, site := range s.config.Sites {
 		if site.Name == siteName {
 			go s.checkSite(site)
@@ -543,4 +576,41 @@ func (s *StatusPageService) ManualCheck(siteName string) error {
 		}
 	}
 	return nil
+}
+
+// Verificar conectividad a internet
+func (s *StatusPageService) CheckInternetConnectivity() bool {
+	_, err := http.Get("http://www.google.com")
+	return err == nil
+}
+
+// Esperar hasta que la conectividad a internet esté disponible
+func (s *StatusPageService) WaitForInternetConnectivity(ctx context.Context) {
+	for {
+		if s.CheckInternetConnectivity() {
+			log.Println("Conectividad a internet disponible")
+			return
+		}
+
+		log.Println("Esperando conectividad a internet...")
+		select {
+		case <-time.After(10 * time.Second):
+			// Reintentar después de 10 segundos
+		case <-ctx.Done():
+			log.Println("Contexto cancelado, saliendo de la espera de conectividad")
+			return
+		}
+	}
+}
+
+// Método para iniciar el servicio con verificación de conectividad
+func (s *StatusPageService) StartWithConnectivityCheck(ctx context.Context) {
+	s.ctx = ctx
+	log.Println("Iniciando servicio de monitoreo con verificación de conectividad...")
+
+	// Esperar hasta que haya conectividad a internet
+	s.WaitForInternetConnectivity(ctx)
+
+	// Iniciar monitoreo en background
+	go s.startMonitoring()
 }

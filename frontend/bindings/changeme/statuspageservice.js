@@ -23,6 +23,15 @@ export function AddSite(name, url, method, timeout) {
 }
 
 /**
+ * Verificar conectividad a internet
+ * @returns {Promise<boolean> & { cancel(): void }}
+ */
+export function CheckInternetConnectivity() {
+    let $resultPromise = /** @type {any} */($Call.ByID(1658137430));
+    return $resultPromise;
+}
+
+/**
  * @returns {Promise<$models.SiteDetail[]> & { cancel(): void }}
  */
 export function GetAllSites() {
@@ -111,12 +120,30 @@ export function Start() {
 }
 
 /**
+ * Método para iniciar el servicio con verificación de conectividad
+ * @returns {Promise<void> & { cancel(): void }}
+ */
+export function StartWithConnectivityCheck() {
+    let $resultPromise = /** @type {any} */($Call.ByID(607635873));
+    return $resultPromise;
+}
+
+/**
  * @param {number} checkInterval
  * @param {number} retentionDays
  * @returns {Promise<void> & { cancel(): void }}
  */
 export function UpdateConfig(checkInterval, retentionDays) {
     let $resultPromise = /** @type {any} */($Call.ByID(2862404239, checkInterval, retentionDays));
+    return $resultPromise;
+}
+
+/**
+ * Esperar hasta que la conectividad a internet esté disponible
+ * @returns {Promise<void> & { cancel(): void }}
+ */
+export function WaitForInternetConnectivity() {
+    let $resultPromise = /** @type {any} */($Call.ByID(4092208258));
     return $resultPromise;
 }
 
