@@ -323,39 +323,125 @@ func (s *StatusPageService) cleanupOldData() {
 	}
 }
 
-// Métodos expuestos al frontend
-func (s *StatusPageService) GetAllStatus() ([]StatusCheck, error) {
-	query := `
-	SELECT DISTINCT sc1.site_name, sc1.site_url, sc1.status, sc1.status_code, 
-		   sc1.response_time, sc1.checked_at, sc1.error_message
-	FROM status_checks sc1
-	INNER JOIN (
-		SELECT site_name, MAX(checked_at) as max_checked_at
-		FROM status_checks
-		GROUP BY site_name
-	) sc2 ON sc1.site_name = sc2.site_name AND sc1.checked_at = sc2.max_checked_at
-	ORDER BY sc1.site_name
-	`
+// Estructura para estadísticas diarias
+type DailyStats struct {
+	Date          string  `json:"date"`
+	TotalChecks   int     `json:"totalChecks"`
+	UpChecks      int     `json:"upChecks"`
+	DownChecks    int     `json:"downChecks"`
+	UptimePercent float64 `json:"uptimePercent"`
+}
 
-	rows, err := s.db.Query(query)
+// Estructura para el status completo de un sitio
+type SiteStatusDetail struct {
+	SiteName         string       `json:"siteName"`
+	SiteURL          string       `json:"siteUrl"`
+	LastStatus       string       `json:"lastStatus"`
+	LastStatusCode   int          `json:"lastStatusCode"`
+	LastResponseTime int64        `json:"lastResponseTime"`
+	LastChecked      time.Time    `json:"lastChecked"`
+	LastErrorMessage string       `json:"lastErrorMessage,omitempty"`
+	DailyStats       []DailyStats `json:"dailyStats"`
+	TotalStats       DailyStats   `json:"totalStats"`
+}
+
+// Métodos expuestos al frontend
+func (s *StatusPageService) GetAllStatus() ([]SiteStatusDetail, error) {
+	var siteDetails []SiteStatusDetail
+
+	// Obtener todos los sitios únicos
+	sitesQuery := `SELECT DISTINCT site_name, site_url FROM status_checks ORDER BY site_name`
+	siteRows, err := s.db.Query(sitesQuery)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer siteRows.Close()
 
-	var checks []StatusCheck
-	for rows.Next() {
-		var check StatusCheck
-		err := rows.Scan(&check.SiteName, &check.SiteURL, &check.Status,
-			&check.StatusCode, &check.ResponseTime, &check.CheckedAt,
-			&check.ErrorMessage)
+	for siteRows.Next() {
+		var siteName, siteURL string
+		err := siteRows.Scan(&siteName, &siteURL)
 		if err != nil {
-			return nil, err
+			continue
 		}
-		checks = append(checks, check)
+
+		siteDetail := SiteStatusDetail{
+			SiteName: siteName,
+			SiteURL:  siteURL,
+		}
+
+		// Obtener el último status del sitio
+		lastStatusQuery := `
+		SELECT status, status_code, response_time, checked_at, error_message
+		FROM status_checks
+		WHERE site_name = ?
+		ORDER BY checked_at DESC
+		LIMIT 1
+		`
+		err = s.db.QueryRow(lastStatusQuery, siteName).Scan(
+			&siteDetail.LastStatus, &siteDetail.LastStatusCode,
+			&siteDetail.LastResponseTime, &siteDetail.LastChecked,
+			&siteDetail.LastErrorMessage)
+
+		if err != nil && err != sql.ErrNoRows {
+			log.Printf("Error obteniendo último status para %s: %v", siteName, err)
+			continue
+		}
+
+		// Obtener estadísticas diarias (últimos 30 días)
+		dailyStatsQuery := `
+		SELECT DATE(checked_at) as check_date,
+			   COUNT(*) as total_checks,
+			   SUM(CASE WHEN status = 'up' THEN 1 ELSE 0 END) as up_checks,
+			   SUM(CASE WHEN status = 'down' THEN 1 ELSE 0 END) as down_checks
+		FROM status_checks
+		WHERE site_name = ? AND checked_at >= DATE('now', '-30 days')
+		GROUP BY DATE(checked_at)
+		ORDER BY check_date DESC
+		`
+
+		statsRows, err := s.db.Query(dailyStatsQuery, siteName)
+		if err != nil {
+			log.Printf("Error obteniendo estadísticas diarias para %s: %v", siteName, err)
+			continue
+		}
+
+		var dailyStats []DailyStats
+		var totalChecks, totalUpChecks, totalDownChecks int
+
+		for statsRows.Next() {
+			var stat DailyStats
+			err := statsRows.Scan(&stat.Date, &stat.TotalChecks, &stat.UpChecks, &stat.DownChecks)
+			if err != nil {
+				continue
+			}
+
+			if stat.TotalChecks > 0 {
+				stat.UptimePercent = float64(stat.UpChecks) / float64(stat.TotalChecks) * 100
+			}
+
+			dailyStats = append(dailyStats, stat)
+			totalChecks += stat.TotalChecks
+			totalUpChecks += stat.UpChecks
+			totalDownChecks += stat.DownChecks
+		}
+		statsRows.Close()
+
+		// Calcular estadísticas totales
+		siteDetail.TotalStats = DailyStats{
+			Date:        "total",
+			TotalChecks: totalChecks,
+			UpChecks:    totalUpChecks,
+			DownChecks:  totalDownChecks,
+		}
+		if totalChecks > 0 {
+			siteDetail.TotalStats.UptimePercent = float64(totalUpChecks) / float64(totalChecks) * 100
+		}
+
+		siteDetail.DailyStats = dailyStats
+		siteDetails = append(siteDetails, siteDetail)
 	}
 
-	return checks, nil
+	return siteDetails, nil
 }
 
 func (s *StatusPageService) GetSiteStatus(siteName string) ([]StatusCheck, error) {

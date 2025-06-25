@@ -58,6 +58,65 @@ export class Config {
     }
 }
 
+/**
+ * Estructura para estadísticas diarias
+ */
+export class DailyStats {
+    /**
+     * Creates a new DailyStats instance.
+     * @param {Partial<DailyStats>} [$$source = {}] - The source object to create the DailyStats.
+     */
+    constructor($$source = {}) {
+        if (!("date" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["date"] = "";
+        }
+        if (!("totalChecks" in $$source)) {
+            /**
+             * @member
+             * @type {number}
+             */
+            this["totalChecks"] = 0;
+        }
+        if (!("upChecks" in $$source)) {
+            /**
+             * @member
+             * @type {number}
+             */
+            this["upChecks"] = 0;
+        }
+        if (!("downChecks" in $$source)) {
+            /**
+             * @member
+             * @type {number}
+             */
+            this["downChecks"] = 0;
+        }
+        if (!("uptimePercent" in $$source)) {
+            /**
+             * @member
+             * @type {number}
+             */
+            this["uptimePercent"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DailyStats instance from a string or object.
+     * @param {any} [$$source = {}]
+     * @returns {DailyStats}
+     */
+    static createFrom($$source = {}) {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new DailyStats(/** @type {Partial<DailyStats>} */($$parsedSource));
+    }
+}
+
 export class Site {
     /**
      * Creates a new Site instance.
@@ -198,6 +257,101 @@ export class SiteDetail {
     }
 }
 
+/**
+ * Estructura para el status completo de un sitio
+ */
+export class SiteStatusDetail {
+    /**
+     * Creates a new SiteStatusDetail instance.
+     * @param {Partial<SiteStatusDetail>} [$$source = {}] - The source object to create the SiteStatusDetail.
+     */
+    constructor($$source = {}) {
+        if (!("siteName" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["siteName"] = "";
+        }
+        if (!("siteUrl" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["siteUrl"] = "";
+        }
+        if (!("lastStatus" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["lastStatus"] = "";
+        }
+        if (!("lastStatusCode" in $$source)) {
+            /**
+             * @member
+             * @type {number}
+             */
+            this["lastStatusCode"] = 0;
+        }
+        if (!("lastResponseTime" in $$source)) {
+            /**
+             * @member
+             * @type {number}
+             */
+            this["lastResponseTime"] = 0;
+        }
+        if (!("lastChecked" in $$source)) {
+            /**
+             * @member
+             * @type {time$0.Time}
+             */
+            this["lastChecked"] = null;
+        }
+        if (/** @type {any} */(false)) {
+            /**
+             * @member
+             * @type {string | undefined}
+             */
+            this["lastErrorMessage"] = "";
+        }
+        if (!("dailyStats" in $$source)) {
+            /**
+             * @member
+             * @type {DailyStats[]}
+             */
+            this["dailyStats"] = [];
+        }
+        if (!("totalStats" in $$source)) {
+            /**
+             * @member
+             * @type {DailyStats}
+             */
+            this["totalStats"] = (new DailyStats());
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SiteStatusDetail instance from a string or object.
+     * @param {any} [$$source = {}]
+     * @returns {SiteStatusDetail}
+     */
+    static createFrom($$source = {}) {
+        const $$createField7_0 = $$createType3;
+        const $$createField8_0 = $$createType2;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("dailyStats" in $$parsedSource) {
+            $$parsedSource["dailyStats"] = $$createField7_0($$parsedSource["dailyStats"]);
+        }
+        if ("totalStats" in $$parsedSource) {
+            $$parsedSource["totalStats"] = $$createField8_0($$parsedSource["totalStats"]);
+        }
+        return new SiteStatusDetail(/** @type {Partial<SiteStatusDetail>} */($$parsedSource));
+    }
+}
+
 export class StatusCheck {
     /**
      * Creates a new StatusCheck instance.
@@ -280,3 +434,5 @@ export class StatusCheck {
 // Private type creation functions
 const $$createType0 = Site.createFrom;
 const $$createType1 = $Create.Array($$createType0);
+const $$createType2 = DailyStats.createFrom;
+const $$createType3 = $Create.Array($$createType2);

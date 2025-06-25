@@ -24,7 +24,7 @@ import {
 import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
 import { StatusPageService } from '../../bindings/changeme';
-import { SiteDetail, StatusCheck } from '../types';
+import { SiteDetail, SiteStatusDetail } from '../types';
 import './StatusDashboard.css';
 
 const { Title, Text } = Typography;
@@ -35,7 +35,7 @@ const StatusDashboard: React.FC<Props> = () => {
     const [selectedSite, setSelectedSite] = useState<string | null>(null);
     const [config, setConfig] = useState<any>(null);
     const [timelineDays, setTimelineDays] = useState(7); const [sites, setSites] = useState<SiteDetail[]>([]);
-    const [statusChecks, setStatusChecks] = useState<StatusCheck[]>([]);
+    const [siteStatusDetails, setSiteStatusDetails] = useState<SiteStatusDetail[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingCards, setLoadingCards] = useState<Set<string>>(new Set());
     const [modalOpen, setModalOpen] = useState(false);
@@ -48,7 +48,7 @@ const StatusDashboard: React.FC<Props> = () => {
                 StatusPageService.GetAllStatus()
             ]);
             setSites(sitesData);
-            setStatusChecks(statusData);
+            setSiteStatusDetails(statusData);
         } catch (error) {
             console.error('Error loading data:', error);
         } finally {
@@ -105,9 +105,6 @@ const StatusDashboard: React.FC<Props> = () => {
             const configData = await StatusPageService.GetConfig();
             setConfig(configData);
             // Calcular número de checks a mostrar basado en días de retención
-            // Asumiendo ~48 checks por día (cada 30 minutos), pero mínimo 30 y máximo 90
-            const checksPerDay = Math.max(1, Math.floor(1440 / (configData.checkInterval / 60))); // checks por día
-            const totalChecks = Math.min(90, Math.max(30, checksPerDay * Math.min(configData.retentionDays, 7)));
             setTimelineDays(configData.retentionDays);
         } catch (error) {
             console.error('Error loading config:', error);
@@ -121,6 +118,8 @@ const StatusDashboard: React.FC<Props> = () => {
                 return '#10b981';
             case 'down':
                 return '#ef4444';
+            case 'partial':
+                return '#f59e0b';
             case 'unknown':
                 return '#6b7280';
             default:
@@ -128,46 +127,57 @@ const StatusDashboard: React.FC<Props> = () => {
         }
     };
 
-    const formatTime = (dateString?: string) => {
-        if (!dateString) return 'Nunca';
-        try {
-            const date = new Date(dateString);
-            return date.toLocaleString('es-ES');
-        } catch {
-            return 'Fecha inválida';
-        }
-    };
-
-    const formatResponseTime = (responseTime?: number) => {
-        if (!responseTime) return 'N/A';
-        return `${responseTime}ms`;
-    };
-
     const overallStatus = sites.length > 0 ?
         sites.every(site => site.status === 'up') ? 'up' :
-            sites.some(site => site.status === 'down') ? 'down' : 'unknown' : 'unknown'; const calculateUptime = (siteName: string) => {
-                const siteChecks = statusChecks.filter(check => check.siteName === siteName);
-                if (siteChecks.length === 0) return 0;
+            sites.some(site => site.status === 'down') ? 'down' : 'unknown' : 'unknown';
 
-                const upChecks = siteChecks.filter(check => check.status === 'up').length;
-                return Math.round((upChecks / siteChecks.length) * 100);
-            };
+    const calculateUptime = (siteName: string) => {
+        const siteStatus = siteStatusDetails.find(status => status.siteName === siteName);
+        if (!siteStatus || !siteStatus.totalStats) return 0;
 
-    const generateUptimeData = (siteName: string) => {
-        if (!config) return Array(30).fill('unknown'); // fallback mientras carga config
+        return Math.round(siteStatus.totalStats.uptimePercent);
+    };
 
-        const siteChecks = statusChecks
-            .filter(check => check.siteName === siteName)
-            .reverse();
+    const generateUptimeData = (siteName: string): {
+        status: string;
+        up: number;
+        down: number;
+        total: number;
+        date: string;
+    }[] => {
+        if (!config) return Array(30).fill(0).map(() => ({ status: 'unknown', up: 0, down: 0, total: 0, date: '' }));
 
-        if (siteChecks.length === 0) {
-            return Array(timelineDays).fill('unknown');
+        const siteStatus = siteStatusDetails.find(status => status.siteName === siteName);
+        if (!siteStatus || !siteStatus.dailyStats) {
+            return Array(timelineDays).fill(0).map(() => ({ status: 'unknown', up: 0, down: 0, total: 0, date: '' }));
         }
 
-        // Rellenar con datos disponibles
-        const uptimeData = Array(timelineDays).fill('unknown');
-        siteChecks.forEach((check, index) => {
-            uptimeData[timelineDays - 1 - index] = check.status;
+        const nowDay = dayjs();
+        const dailyStats = siteStatus.dailyStats.slice(0, timelineDays);
+
+        // Generar datos de uptime basados en las estadísticas diarias
+        const uptimeData = Array(timelineDays).fill(0).map((_, index) => {
+            const dayDate = nowDay.subtract(timelineDays - 1 - index, 'day').format('YYYY-MM-DD');
+            return { status: 'unknown', up: 0, down: 0, total: 0, date: dayDate };
+        });
+
+        // console.log(dailyStats)
+
+        // Llenar con datos reales donde estén disponibles
+        dailyStats.forEach((stat) => {
+            const statDate = dayjs(stat.date, 'YYYY-MM-DD');
+            const dayIndex = timelineDays - 1 - nowDay.diff(statDate, 'day');
+
+            if (dayIndex >= 0 && dayIndex < timelineDays) {
+                const uptimePercent = stat.uptimePercent;
+                uptimeData[dayIndex] = {
+                    up: stat.upChecks,
+                    down: stat.downChecks,
+                    total: stat.totalChecks,
+                    status: uptimePercent >= 80 ? 'up' : uptimePercent < 50 ? 'down' : 'partial',
+                    date: stat.date
+                };
+            }
         });
 
         return uptimeData;
@@ -234,6 +244,7 @@ const StatusDashboard: React.FC<Props> = () => {
                     </Row>
                 </Card>                <Row gutter={[16, 16]}>
                     {sites.map((site) => {
+                        console.log(site);
                         const uptimeData = generateUptimeData(site.name);
                         const uptimePercent = calculateUptime(site.name);
                         const isCardLoading = loadingCards.has(site.name);
@@ -316,14 +327,117 @@ const StatusDashboard: React.FC<Props> = () => {
                                             </div>
                                             <div style={{ display: 'flex', gap: 1, height: 20 }}>
                                                 {uptimeData.map((status, index) => (
-                                                    <Tooltip key={index} title={`Check ${index + 1}: ${status}`}>
+                                                    <Tooltip
+                                                        key={index}
+                                                        title={
+                                                            <div style={{ padding: '8px 4px', minWidth: '200px' }}>
+                                                                <div style={{
+                                                                    fontWeight: 'bold',
+                                                                    marginBottom: '8px',
+                                                                    fontSize: '13px',
+                                                                    borderBottom: '1px solid rgba(255,255,255,0.2)',
+                                                                    paddingBottom: '4px'
+                                                                }}>
+                                                                    {status.date ?
+                                                                        dayjs(status.date).format('dddd DD') :
+                                                                        `${dayjs().subtract(timelineDays - 1 - index, 'day').format('DD/MM/YYYY dddd')}`
+                                                                    }
+                                                                </div>
+                                                                {status.total > 0 ? (
+                                                                    <div>
+                                                                        <div style={{
+                                                                            display: 'flex',
+                                                                            justifyContent: 'space-between',
+                                                                            marginBottom: '6px'
+                                                                        }}>
+                                                                            <span style={{ fontSize: '12px' }}>Total de checks:</span>
+                                                                            <strong style={{ fontSize: '12px' }}>{status.total}</strong>
+                                                                        </div>
+                                                                        <div style={{
+                                                                            display: 'flex',
+                                                                            justifyContent: 'space-between',
+                                                                            marginBottom: '6px'
+                                                                        }}>
+                                                                            <span style={{ fontSize: '12px', color: '#52C41A' }}>✓ Exitosos:</span>
+                                                                            <strong style={{ fontSize: '12px', color: '#52C41A' }}>{status.up}</strong>
+                                                                        </div>
+                                                                        <div style={{
+                                                                            display: 'flex',
+                                                                            justifyContent: 'space-between',
+                                                                            marginBottom: '8px'
+                                                                        }}>
+                                                                            <span style={{ fontSize: '12px', color: '#FF4D4F' }}>✗ Fallidos:</span>
+                                                                            <strong style={{ fontSize: '12px', color: '#FF4D4F' }}>{status.down}</strong>
+                                                                        </div>
+
+                                                                        {/* Barra de progreso visual */}
+                                                                        <div style={{ marginBottom: '8px' }}>
+                                                                            <div style={{
+                                                                                fontSize: '11px',
+                                                                                marginBottom: '2px',
+                                                                                color: 'rgba(255,255,255,0.8)'
+                                                                            }}>
+                                                                                Distribución diaria:
+                                                                            </div>
+                                                                            <div style={{
+                                                                                display: 'flex',
+                                                                                height: '8px',
+                                                                                borderRadius: '4px',
+                                                                                overflow: 'hidden',
+                                                                                backgroundColor: 'rgba(255,255,255,0.2)'
+                                                                            }}>
+                                                                                <div style={{
+                                                                                    width: `${(status.up / status.total) * 100}%`,
+                                                                                    backgroundColor: '#52C41A'
+                                                                                }} />
+                                                                                <div style={{
+                                                                                    width: `${(status.down / status.total) * 100}%`,
+                                                                                    backgroundColor: '#FF4D4F'
+                                                                                }} />
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div style={{
+                                                                            display: 'flex',
+                                                                            justifyContent: 'space-between',
+                                                                            borderTop: '1px solid rgba(255,255,255,0.2)',
+                                                                            paddingTop: '6px'
+                                                                        }}>
+                                                                            <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Uptime:</span>
+                                                                            <strong style={{
+                                                                                fontSize: '13px',
+                                                                                color: status.up / status.total >= 0.8 ? '#52C41A' :
+                                                                                    status.up / status.total < 0.5 ? '#FF4D4F' : '#FA8C16'
+                                                                            }}>
+                                                                                {((status.up / status.total) * 100).toFixed(1)}%
+                                                                            </strong>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div style={{
+                                                                        fontSize: '12px',
+                                                                        color: 'rgba(255,255,255,0.6)',
+                                                                        textAlign: 'center',
+                                                                        padding: '8px 0'
+                                                                    }}>
+                                                                        Sin datos disponibles para este día
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        }
+                                                        placement="top"
+                                                        overlayStyle={{
+                                                            maxWidth: '250px'
+                                                        }}
+                                                    >
                                                         <div
                                                             style={{
                                                                 flex: 1,
-                                                                backgroundColor: getStatusColor(status),
+                                                                backgroundColor: getStatusColor(status.status),
                                                                 borderRadius: 2,
-                                                                opacity: status === 'unknown' ? 0.3 : 1,
-                                                                cursor: 'pointer'
+                                                                opacity: status.status === 'unknown' ? 0.3 : 1,
+                                                                cursor: 'pointer',
+                                                                minHeight: '20px'
                                                             }}
                                                         />
                                                     </Tooltip>
@@ -486,42 +600,65 @@ const StatusDashboard: React.FC<Props> = () => {
                                     </div>
                                 )}
 
-                                {/* Sección de Historial */}
-                                <Title level={4}>Historial Reciente</Title>
-                                <div style={{ maxHeight: 400 }}>
+                                {/* Sección de Estadísticas Diarias */}
+                                <Title level={4}>Estadísticas Diarias (Últimos {timelineDays} días)</Title>
+                                <div style={{ maxHeight: 400, }}>
                                     <Row gutter={[8, 8]}>
-                                        {statusChecks
-                                            .filter(check => check.siteName === selectedSite)
-                                            .slice(0, 20)
-                                            .map((check, index) => (
+                                        {(() => {
+                                            const siteStatus = siteStatusDetails.find(status => status.siteName === selectedSite);
+                                            if (!siteStatus || !siteStatus.dailyStats || siteStatus.dailyStats.length === 0) {
+                                                return (
+                                                    <Col span={24}>
+                                                        <Empty
+                                                            image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                                            description="No hay datos de estadísticas disponibles"
+                                                        />
+                                                    </Col>
+                                                );
+                                            }
+
+                                            return siteStatus.dailyStats.map((stat, index) => (
                                                 <Col span={24} key={index}>
                                                     <Card
                                                         size="small"
                                                         style={{
-                                                            borderLeft: `4px solid ${getStatusColor(check.status)}`,
+                                                            borderLeft: `4px solid ${stat.uptimePercent >= 80 ? '#10b981' : stat.uptimePercent < 50 ? '#ef4444' : '#f59e0b'}`,
                                                         }}
                                                     >
                                                         <Row align="middle" justify="space-between">
-                                                            <Col>
-                                                                <Space>
-                                                                    {getStatusTag(check.status)}
-                                                                    <Text style={{ fontSize: '12px' }}>
-                                                                        HTTP {check.statusCode}
-                                                                    </Text>
-                                                                    <Text style={{ fontSize: '12px' }}>
-                                                                        {formatResponseTime(check.responseTime)}
-                                                                    </Text>
+                                                            <Col flex="auto">
+                                                                <Space direction="vertical" size="small">
+                                                                    <Space>
+                                                                        <Text strong style={{ fontSize: '13px' }}>
+                                                                            {new Date(stat.date).toLocaleDateString('es-ES', {
+                                                                                weekday: 'long',
+                                                                                year: 'numeric',
+                                                                                month: 'long',
+                                                                                day: 'numeric'
+                                                                            })}
+                                                                        </Text>
+                                                                        <Tag color={stat.uptimePercent >= 95 ? 'success' : stat.uptimePercent >= 80 ? 'warning' : 'error'}>
+                                                                            {stat.uptimePercent.toFixed(1)}% Uptime
+                                                                        </Tag>
+                                                                    </Space>
+                                                                    <Space>
+                                                                        <Text style={{ fontSize: '12px' }}>
+                                                                            Total: {stat.totalChecks} checks
+                                                                        </Text>
+                                                                        <Text style={{ fontSize: '12px', color: '#10b981' }}>
+                                                                            ✓ {stat.upChecks}
+                                                                        </Text>
+                                                                        <Text style={{ fontSize: '12px', color: '#ef4444' }}>
+                                                                            ✗ {stat.downChecks}
+                                                                        </Text>
+                                                                    </Space>
                                                                 </Space>
-                                                            </Col>
-                                                            <Col>
-                                                                <Text style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.7)' }}>
-                                                                    {formatTime(check.checkedAt)}
-                                                                </Text>
                                                             </Col>
                                                         </Row>
                                                     </Card>
                                                 </Col>
-                                            ))}
+                                            ));
+                                        })()}
                                     </Row>
                                 </div>
                             </div>

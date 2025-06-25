@@ -45,7 +45,7 @@ export function GetAllSites() {
 
 /**
  * Métodos expuestos al frontend
- * @returns {Promise<$models.StatusCheck[]> & { cancel(): void }}
+ * @returns {Promise<$models.SiteStatusDetail[]> & { cancel(): void }}
  */
 export function GetAllStatus() {
     let $resultPromise = /** @type {any} */($Call.ByID(3889932381));
@@ -75,7 +75,7 @@ export function GetConfig() {
 export function GetSiteStatus(siteName) {
     let $resultPromise = /** @type {any} */($Call.ByID(2335009477, siteName));
     let $typingPromise = /** @type {any} */($resultPromise.then(($result) => {
-        return $$createType3($result);
+        return $$createType6($result);
     }));
     $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
     return $typingPromise;
@@ -87,7 +87,7 @@ export function GetSiteStatus(siteName) {
 export function GetStats() {
     let $resultPromise = /** @type {any} */($Call.ByID(3336061195));
     let $typingPromise = /** @type {any} */($resultPromise.then(($result) => {
-        return $$createType5($result);
+        return $$createType7($result);
     }));
     $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
     return $typingPromise;
@@ -150,7 +150,9 @@ export function WaitForInternetConnectivity() {
 // Private type creation functions
 const $$createType0 = $models.SiteDetail.createFrom;
 const $$createType1 = $Create.Array($$createType0);
-const $$createType2 = $models.StatusCheck.createFrom;
+const $$createType2 = $models.SiteStatusDetail.createFrom;
 const $$createType3 = $Create.Array($$createType2);
 const $$createType4 = $models.Config.createFrom;
-const $$createType5 = $Create.Map($Create.Any, $Create.Any);
+const $$createType5 = $models.StatusCheck.createFrom;
+const $$createType6 = $Create.Array($$createType5);
+const $$createType7 = $Create.Map($Create.Any, $Create.Any);

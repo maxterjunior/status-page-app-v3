@@ -39,11 +39,11 @@ func main() {
 		Title:       "StatusPage Monitor",
 		Width:       1100,
 		Height:      700,
-		Frameless:   true,
-		AlwaysOnTop: true,
-		Hidden:      true,
+		Frameless:   false,
+		AlwaysOnTop: false,
+		Hidden:      false,
 		Windows: application.WindowsWindow{
-			HiddenOnTaskbar: true,
+			HiddenOnTaskbar: false,
 		},
 		BackgroundColour: application.NewRGB(248, 249, 250),
 		URL:              "/",
@@ -72,7 +72,7 @@ func main() {
 	})
 	systemTray.SetMenu(myMenu)
 
-	systemTray.AttachWindow(window).WindowOffset(5)
+	// systemTray.AttachWindow(window).WindowOffset(5)
 
 	err := app.Run()
 	if err != nil {

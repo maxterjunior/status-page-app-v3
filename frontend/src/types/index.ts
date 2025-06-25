@@ -9,6 +9,26 @@ export interface StatusCheck {
     errorMessage?: string;
 }
 
+export interface DailyStats {
+    date: string;
+    totalChecks: number;
+    upChecks: number;
+    downChecks: number;
+    uptimePercent: number;
+}
+
+export interface SiteStatusDetail {
+    siteName: string;
+    siteUrl: string;
+    lastStatus: string;
+    lastStatusCode: number;
+    lastResponseTime: number;
+    lastChecked: string;
+    lastErrorMessage?: string;
+    dailyStats: DailyStats[];
+    totalStats: DailyStats;
+}
+
 export interface SiteDetail {
     name: string;
     url: string;
