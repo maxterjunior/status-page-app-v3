@@ -161,8 +161,6 @@ const StatusDashboard: React.FC<Props> = () => {
             return { status: 'unknown', up: 0, down: 0, total: 0, date: dayDate };
         });
 
-        // console.log(dailyStats)
-
         // Llenar con datos reales donde estén disponibles
         dailyStats.forEach((stat) => {
             const statDate = dayjs(stat.date, 'YYYY-MM-DD');
@@ -244,7 +242,6 @@ const StatusDashboard: React.FC<Props> = () => {
                     </Row>
                 </Card>                <Row gutter={[16, 16]}>
                     {sites.map((site) => {
-                        console.log(site);
                         const uptimeData = generateUptimeData(site.name);
                         const uptimePercent = calculateUptime(site.name);
                         const isCardLoading = loadingCards.has(site.name);
