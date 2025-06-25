@@ -28,8 +28,8 @@ interface Stats {
 interface Props {
 }
 
-const StatsPanel: React.FC<Props> = ({ }) => {
-    const [stats, setStats] = useState<any>(null);
+const StatsPanel: React.FC<Props> = () => {
+    const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -40,7 +40,7 @@ const StatsPanel: React.FC<Props> = ({ }) => {
         try {
             setLoading(true);
             const statsData = await StatusPageService.GetStats();
-            setStats(statsData);
+            setStats(statsData as Stats);
         } catch (error) {
             console.error('Error loading stats:', error);
         } finally {
@@ -56,10 +56,6 @@ const StatsPanel: React.FC<Props> = ({ }) => {
         } catch {
             return 'Fecha inválida';
         }
-    };
-
-    const formatPercentage = (percent: number) => {
-        return `${percent.toFixed(2)}%`;
     };
 
     const formatResponseTime = (time: number) => {
@@ -88,7 +84,9 @@ const StatsPanel: React.FC<Props> = ({ }) => {
                 </Button>
             </div>
         );
-    } return (
+    }
+
+    return (
         <div className="stats-panel">
             <div className="stats-header">
                 <Title level={2} style={{ color: 'white', margin: 0 }}>
